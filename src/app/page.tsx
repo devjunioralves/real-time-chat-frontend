@@ -1,6 +1,6 @@
 "use client";
 import instance from "@/config/axiosConfig";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import Chat from "../components/Chat";
 import Sidebar from "../components/Sidebar";
@@ -14,7 +14,7 @@ interface Message {
 }
 
 interface Item {
-  id: string;
+  _id: string;
   name: string;
   type: "friend" | "room";
 }
@@ -23,43 +23,52 @@ export const generateUniqueUserId = (): string => {
   return uuidv4();
 };
 
-const initialItems: Item[] = [
-  { id: "1", name: "Friend 1", type: "friend" },
-  { id: "2", name: "Room 1", type: "room" },
-];
-
 const Home: React.FC = () => {
-  const [items, setItems] = useState<Item[]>(initialItems);
+  const [items, setItems] = useState<Item[]>([]);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [messagesMap, setMessagesMap] = useState<{ [key: string]: Message[] }>(
     {}
   );
 
+  useEffect(() => {
+    const fetchItems = async () => {
+      try {
+        const response = await instance.get("/room");
+        setItems(response.data);
+      } catch (error) {
+        console.error("Error on find rooms", error);
+      }
+    };
+
+    fetchItems();
+  }, []);
+
   const handleItemClick = async (item: Item) => {
     setSelectedItem(item);
 
-    if (!messagesMap[item.id]) {
-      const response = await instance(`/message/recent?roomId=${item.id}`);
+    if (!messagesMap[item._id]) {
+      const response = await instance(`/message/recent?roomId=${item._id}`);
       const messages = response.data;
       setMessagesMap((prevMessages) => ({
         ...prevMessages,
-        [item.id]: messages,
+        [item._id]: messages,
       }));
     }
   };
 
   const handleNewMessage = (message: Message) => {
-    console.log("New message", message);
     setMessagesMap((prevMessages) => ({
       ...prevMessages,
       [message.roomId]: [...(prevMessages[message.roomId] || []), message],
     }));
   };
 
-  const handleCreateRoom = (roomName: string) => {
+  const handleCreateRoom = async (roomName: string) => {
+    const response = await instance.post("/room", { name: roomName });
+
     const newRoom: Item = {
-      id: generateUniqueUserId(),
-      name: roomName,
+      _id: response.data.id,
+      name: response.data.name,
       type: "room",
     };
 
@@ -76,10 +85,10 @@ const Home: React.FC = () => {
       <div style={{ flex: 1 }}>
         {selectedItem ? (
           <Chat
-            id={selectedItem.id}
+            id={selectedItem._id}
             name={selectedItem.name}
             type={selectedItem.type}
-            messages={messagesMap[selectedItem.id] || []}
+            messages={messagesMap[selectedItem._id] || []}
             onNewMessage={handleNewMessage}
           />
         ) : (

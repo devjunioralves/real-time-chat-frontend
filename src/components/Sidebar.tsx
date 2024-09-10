@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 interface Item {
-  id: string;
+  _id: string;
   name: string;
   type: "friend" | "room";
 }
@@ -36,7 +36,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <ul style={{ listStyle: "none", padding: 0 }}>
         {items.map((item) => (
           <li
-            key={item.id}
+            key={item._id}
             onClick={() => onItemClick(item)}
             style={{ cursor: "pointer", marginBottom: "10px" }}
           >
@@ -52,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             value={newRoomName}
             onChange={(e) => setNewRoomName(e.target.value)}
             placeholder="Enter room name"
-            style={{ width: "100%", marginBottom: "10px" }}
+            style={{ marginBottom: "10px" }}
           />
           <button onClick={handleCreateRoomClick} style={{ width: "100%" }}>
             Create Room
